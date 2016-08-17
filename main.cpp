@@ -9,8 +9,9 @@ DigitalIn button_top(A1);
 DigitalIn button_right(A0);
 int input[50];
 int sequence[] = {3, 2, 1, 3, 2, 1};
+int level_index = 0;
 
-void start_up() {
+void level() {
     //generate random simon says sequence
     
     //wait for user input
@@ -45,7 +46,6 @@ void simon_loop() {
 /*  gather user input based on buttons pressed, then store button # into
     the input array (1=button_right, 2=button_top, 3=button_left) */
 void input_loop() {
-
     for(int j = 0; j < (sizeof(sequence)/sizeof(sequence[0])); j++) { 
         wait(0.4);
         if (button_top) {
@@ -83,7 +83,7 @@ bool win_or_lose() {
     return true;
 }
 
-/*  display a happy LED animation for winning (LED levels 0 to 10 fast, twice) */
+/*  display a happy LED animation for winning (LED levels 0 to 10 fast) */
 void success() {
     for(int h = 0; h <=10; h++){
         top.setLevel(h);
@@ -116,12 +116,14 @@ int main() {
     top.setLevel(0);
     right.setLevel(0);
     left.setLevel(0);
-    start_up();
-    wait(0.3);
-    simon_loop();
-    input_loop();
-    wait(0.2);
-    bool winner = win_or_lose();
-    if (winner == true) { success(); } 
-    else { failure(); }
+    //next_level:
+        level();
+        wait(0.3);
+        simon_loop();
+        input_loop();
+        wait(0.2);
+        bool winner = win_or_lose();
+        if (winner == true) { success(); } 
+        else { failure(); }
+    //if (level < 10) then { GoTo next_level; }
 }
