@@ -1,28 +1,53 @@
 #include "mbed.h"
 #include "LED_Bar.h"
+#include "main.h"
 
-LED_Bar top(D6, D5);
-LED_Bar right(D8, D7);
-LED_Bar left(D4, D3);
-InterruptIn button_left(A2);
-InterruptIn button_top(A1);
-InterruptIn button_right(A0);
-DigitalOut buzzer(D2);
-Ticker input_timer;
-int input[50];
-int input_index;
-int sequence[] = {3, 2, 1, 3, 2, 1};
 int sequence_size;
-int level_index = 0;
+int sequence[100];
+int level_index = 1;
+int level_array;
+int win_count = 0;
+int lose_count = 0;
+bool start_flag = false;
+
+void start_level() {    
+    right.setLevel(10);
+    top.setLevel(10);
+    left.setLevel(10);
+    wait(0.2);
+    right.setLevel(0);
+    top.setLevel(0);
+    left.setLevel(0);
+    wait(0.2);
+    right.setLevel(10);
+    top.setLevel(10);
+    left.setLevel(10);
+    wait(0.2);
+    right.setLevel(0);
+    top.setLevel(0);
+    left.setLevel(0);
+    start_flag = true;
+    return;
+}
 
 void level() {
-    //generate random simon says sequence
-    
-    //wait for user input
-    while(!(button_left or button_right or button_top)){
-        
+    /*  generate random simon says sequence:
+        level 1 will have a 3 LED blink combination, with each subsequent level
+        having 1 more LED blink, so level 2 has a 4 blink combination, etc. */
+    for (int i = 0; i < level_array; i++) {
+        sequence[i] = rand() % 3 + 1;   // choose a random number b/w 1 to 3
     }
     
+    level_index++;
+    
+    /*  button interrupts when user wants to begin the game/level */
+    button_right.rise(&start_level);
+    button_top.rise(&start_level);
+    button_left.rise(&start_level);
+    while(!start_flag) {
+        wait(0.2); // waiting for user to begin game LED animation
+        // perfect time to play waiting buzzer music
+    }
 }
 
 /*  simon says loop: turn on corresponding LED Bars according to the # 
@@ -33,16 +58,17 @@ void simon_loop() {
             right.setLevel(10);
             wait(0.4);
             right.setLevel(0);
-        }
-        else if (sequence[i] == 2) {
+            wait(0.4);
+        } else if (sequence[i] == 2) {
             top.setLevel(10);
             wait(0.4);
             top.setLevel(0);
-        }
-        else {
+            wait(0.4);
+        } else {
             left.setLevel(10);
             wait(0.4);
             left.setLevel(0);
+            wait(0.4);
         }
     }
 }
@@ -113,9 +139,6 @@ void success() {
         left.setLevel(h);
         wait(0.05);
     }  
-    top.setLevel(0);
-    right.setLevel(0);
-    left.setLevel(0); 
 }
 
 /*  display a sad LED animation for losing (LED levels 10 to 0 slow) */
@@ -130,19 +153,28 @@ void failure() {
 
 void start_game() {
     input_index = 0;
-    sequence_size = sizeof(sequence)/sizeof(sequence[0]);
     top.setLevel(0);
     right.setLevel(0);
     left.setLevel(0);
-    //level();
+    level_array = ((level_index - 1) + 3);
+    sequence_size = level_array;
+    level();
     wait(0.3);
     simon_loop();
     wait(0.3);
     input_loop();
-    wait(0.2);
+    wait(0.3);
     bool winner = win_or_lose();
-    if (winner == true) { success(); } 
-    else { failure(); }
+    if (winner == true) { win_count++; success(); } 
+    else { lose_count++; failure(); }
+    if (lose_count > 0) { 
+        start_flag = false;
+        wait(1); // add in end game buzzer music
+        win_count = 0;
+        lose_count = 0;
+        level_index = 1;
+        start_game();
+    } else { start_game(); }
 }
 
 int main() {
