@@ -7,6 +7,8 @@ LED_Bar left(D4, D3);
 DigitalIn button_left(A2);
 DigitalIn button_top(A1);
 DigitalIn button_right(A0);
+DigitalOut buzzer(D2);
+Ticker input_timer;
 int input[50];
 int sequence[] = {3, 2, 1, 3, 2, 1};
 int level_index = 0;
@@ -112,18 +114,24 @@ void failure() {
     }
 }
 
-int main() {
+void start_game() {
     top.setLevel(0);
     right.setLevel(0);
     left.setLevel(0);
     //next_level:
-        level();
-        wait(0.3);
-        simon_loop();
-        input_loop();
-        wait(0.2);
-        bool winner = win_or_lose();
-        if (winner == true) { success(); } 
-        else { failure(); }
+    //level();
+    wait(0.3);
+    simon_loop();
+    input_loop();
+    wait(0.2);
+    bool winner = win_or_lose();
+    if (winner == true) { success(); } 
+    else { failure(); }
     //if (level < 10) then { GoTo next_level; }
 }
+
+int main() {
+    start_game();
+}
+
+//buzzer_timer.attach(&timer_handler, 0.5)
